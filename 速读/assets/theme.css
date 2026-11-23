@@ -1,0 +1,625 @@
+/* ===========================================
+   COBALT GRID — 设计系统样式表 v2
+   风格：日式趋势研究刊物 —— 米白纸面 + 电光钴蓝单色油墨 + 常驻坐标纸网格
+   规则来源：bold-template-pack/templates/cobalt-grid/design.md
+   舞台：固定 1920×1080，整体等比缩放，绝不按设备重排
+   =========================================== */
+
+/* ===========================================
+   THEME TOKENS — 严格两色：纸 + 钴蓝
+   设计意图：整个系统只有一个墨色（钴蓝）与一个纸面（米白），
+   层次靠线宽与不透明度拉开，而不是引入第二种颜色。
+   =========================================== */
+:root{
+  --paper:      #F0EBDE;   /* 纸面：唯一表面 */
+  --paper-2:    #E6E0CE;   /* 深一档纸面，仅用于极少量区域区分 */
+  --ink:        #1F2BE0;   /* 钴蓝：唯一墨色 */
+  --ink-soft:   #5560E5;   /* 淡钴蓝：次级标记 */
+  --grid:       rgba(31,43,224,.10);  /* 10% 钴蓝：坐标纸网格 */
+  --ink-faint:  rgba(31,43,224,.18);  /* 18% 钴蓝：行分隔线 */
+
+  /* 字体三件套：衬线做陈述、无衬线做正文、等宽做版面数据 */
+  --f-display: 'Newsreader', 'Noto Serif SC', Georgia, serif;
+  --f-cn-display: 'Noto Serif SC', 'Newsreader', serif;
+  --f-body:   'Hanken Grotesk', 'Noto Serif SC', sans-serif;
+  --f-cn-body:'Noto Serif SC', 'Hanken Grotesk', sans-serif;
+  --f-mono:   'DM Mono', ui-monospace, monospace;
+
+  /* 间距标度（已换算到 1920×1080 舞台坐标） */
+  --edge:      68px;   /* 左右安全边 */
+  --frame-top:  92px;
+  --frame-bot: 104px;
+  --hair-top:   30px;   /* 顶部发丝线距顶 */
+  --hair-bot:   26px;   /* 底部发丝线距底 */
+  --chrome-bot: 50px;   /* 页码/导航提示距底 */
+
+  --ease: cubic-bezier(.16,1,.3,1);
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   Include this ENTIRE file in every presentation.
+   Slides are authored at 1920×1080 and scaled as a whole.
+   =========================================== */
+
+/* 1. Lock the browser viewport */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 2. Full-window deck viewport */
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 3. Fixed 16:9 design canvas.
+   JavaScript sets transform: translate(...) scale(...). */
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+/* 4. Slides stack inside the fixed stage.
+   Content must be laid out at 1920×1080, not reflowed per device. */
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+/* 5. Keep media inside authored slide bounds */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 6. Presentation chrome stays outside the slide design system */
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+/* 7. Print one fixed-size slide per page */
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+/* 8. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   PAPER CANVAS — 常驻坐标纸网格
+   设计意图：10% 不透明度的钴蓝细网格铺在每一页背后，是整个系统的地基。
+   =========================================== */
+.deck-stage{ --slide-bg: var(--paper); background: var(--paper); }
+.slide{ background: var(--paper); }
+.slide::before{
+  content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size:34px 34px;
+  background-position:68px 92px;
+}
+/* 纸面极淡斜向油墨晕染，避免大面积死板 */
+.slide::after{
+  content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background:
+    linear-gradient(138deg, rgba(31,43,224,.055) 0%, transparent 44%),
+    radial-gradient(ellipse 78% 62% at 84% 12%, rgba(31,43,224,.075) 0%, transparent 62%);
+}
+
+/* ===========================================
+   UNIVERSAL CHROME — 每页都有的四件套
+   =========================================== */
+.hairline-top, .hairline-bot{
+  position:absolute; left:var(--edge); right:var(--edge); height:1.5px;
+  background:var(--ink); z-index:3;
+}
+.hairline-top{ top:var(--hair-top); }
+.hairline-bot{ bottom:var(--hair-bot); }
+
+.page-num{
+  position:absolute; right:var(--edge); bottom:var(--chrome-bot); z-index:3;
+  font-family:var(--f-mono); font-size:15px; letter-spacing:.06em; color:var(--ink);
+}
+.page-num span{ color:var(--ink-soft); }
+
+.nav-hint{
+  position:absolute; left:var(--edge); bottom:var(--chrome-bot); z-index:3;
+  font-family:var(--f-mono); font-size:13px; letter-spacing:.08em;
+  color:var(--ink); opacity:.4;
+}
+
+/* ===========================================
+   FRAME — 内容容器
+   =========================================== */
+.frame{
+  position:absolute; z-index:2;
+  left:var(--edge); right:var(--edge);
+  top:var(--frame-top); bottom:var(--frame-bot);
+}
+
+/* ===========================================
+   TOPBAR — 通用区块页眉
+   =========================================== */
+.topbar{
+  display:flex; align-items:flex-end; justify-content:space-between; gap:40px;
+  border-bottom:1.5px solid var(--ink); padding-bottom:14px;
+}
+.topbar .tb-left{ display:flex; align-items:baseline; gap:26px; min-width:0; }
+.topbar .tb-right{ flex:0 0 auto; }
+
+.no-chip{
+  display:inline-block; background:var(--ink); color:var(--paper);
+  font-family:var(--f-mono); font-size:16px; letter-spacing:.1em;
+  padding:5px 12px 4px; white-space:nowrap;
+}
+.tb-title{
+  font-family:var(--f-cn-display); font-weight:700; font-size:29px;
+  color:var(--ink); letter-spacing:0; line-height:1.2;
+}
+.tb-tag{
+  font-family:var(--f-mono); font-size:14px; letter-spacing:.06em; color:var(--ink);
+  padding:4px 10px 3px; border:1.5px solid var(--ink);
+}
+
+/* ===========================================
+   IDEA PAGE — 观点页（定稿版式 v3）
+   版心：书名+作者+章节顶栏 / 核心论点 / 左推演 + 右(支撑+行动) / 金句
+   字号固定：推演·支撑·行动 25px，区块头 28px，金句 33px，出处 20px。
+   全页只保留背景正方形格子一种虚线；条目间、栏间、标题下的线全部移除，
+   杜绝浅色虚线与背景格子的叠影。
+   =========================================== */
+.slide-idea{ --frame-top:44px; --frame-bot:72px; }
+.slide-idea .hairline-top{ display:none; }
+.slide-idea .frame{
+  display:flex; flex-direction:column; gap:16px;
+}
+.slide-idea .frame > .cols{ flex:1 1 auto; min-height:0; }
+.slide-idea .topbar, .slide-idea .idea-title, .slide-idea .quote-row{ flex:0 0 auto; }
+
+/* 顶栏：编号 + 书名 + 作者国别 + 章节（居中在单条下横线之上） */
+.slide-idea .topbar{
+  display:flex; align-items:center; justify-content:space-between; gap:40px;
+  border-bottom:1.5px solid var(--ink); padding:12px 0; min-height:64px;
+}
+.slide-idea .tb-left{ display:flex; align-items:baseline; gap:22px; min-width:0; flex-wrap:wrap; }
+.slide-idea .tb-right{ flex:0 0 auto; width:150px; }
+.slide-idea .no-chip{ display:inline-block; background:var(--ink); color:var(--paper); font-family:var(--f-mono); font-size:19px; letter-spacing:.1em; padding:6px 14px 5px; white-space:nowrap; }
+.book-name{ font-family:var(--f-cn-display); font-weight:700; font-size:27px; color:var(--ink); white-space:nowrap; }
+.book-author{ font-family:var(--f-mono); font-size:17px; font-weight:700; letter-spacing:.04em; color:var(--ink-soft); white-space:nowrap; }
+.tb-chap{ font-family:var(--f-cn-display); font-weight:700; font-size:27px; color:var(--ink); white-space:nowrap; }
+
+/* 核心论点：无下划线 */
+.idea-title{
+  font-family:var(--f-cn-display); font-weight:700; color:var(--ink);
+  letter-spacing:0; line-height:1.2; padding-bottom:2px;
+}
+.idea-title.s1{ font-size:56px; }
+.idea-title.s2{ font-size:50px; }
+.idea-title.s3{ font-size:44px; }
+.idea-title.s4{ font-size:39px; }
+/* v21 分层 chip：内联标题末尾（右上角），悬停显示结网关系 */
+.idea-title .layer-chip{
+  display:inline-block; vertical-align:middle; margin-left:16px;
+  font-family:var(--f-cn-display); font-size:16px; font-weight:700;
+  line-height:1; letter-spacing:.04em; padding:7px 12px 6px;
+  border:1.5px solid var(--ink); color:var(--ink); background:transparent;
+  white-space:nowrap; cursor:help; position:relative; top:-3px;
+}
+.idea-title .layer-chip.L-philosophy{ background:var(--ink); color:var(--paper); }
+.idea-title .layer-chip.L-method{ border-style:dashed; }
+
+/* 双栏主体：无栏间竖线；--body-fs/--body-gap 由 fitBody() 按内容密度自适应（字号 24→19、间距 4→22px） */
+.cols{ display:grid; grid-template-columns:44fr 56fr; gap:0; min-height:0; align-items:stretch; --body-fs:19px; --body-gap:4px; }
+.col{ padding-right:40px; display:flex; flex-direction:column; min-height:0; }
+.col + .col{ padding-left:44px; padding-right:0; }  /* 去掉竖虚线 */
+
+.col-head{
+  display:flex; align-items:baseline; gap:14px;
+  border-bottom:1.5px solid var(--ink); padding-bottom:8px; margin-bottom:10px; flex:0 0 auto;
+}
+.col-head .cn{ font-family:var(--f-cn-display); font-weight:700; font-size:28px; color:var(--ink); }
+.col-head .en{ font-family:var(--f-mono); font-size:13px; letter-spacing:.06em; color:var(--ink-soft); }
+
+/* 左：推演逻辑（前提/假设置顶 + 推演步骤）—— 正文统一 var(--body-fs) */
+.left-col .block.reasoning{ display:flex; flex-direction:column; min-height:0; }
+.prem-row{ display:flex; align-items:baseline; gap:12px; padding:5px 0 6px; border-bottom:1px solid var(--ink-faint); }
+.prem-row .plabel{
+  font-family:var(--f-cn-display); font-weight:700; font-size:var(--body-fs); color:var(--ink);
+  border-left:3px solid var(--ink); padding-left:8px; flex:0 0 auto; min-width:52px;
+}
+.prem-row .ptexts{ display:flex; flex-wrap:wrap; gap:2px 12px; font-size:var(--body-fs); line-height:1.5; color:var(--ink); }
+.prem-item{ font-family:var(--f-cn-body); }
+
+.logic-list{ list-style:none; }
+.logic-list li{
+  display:grid; grid-template-columns:46px 1fr; gap:12px; align-items:start;
+  padding:var(--body-gap) 0; border-bottom:none;
+}
+.logic-list .step{ font-family:var(--f-mono); font-size:17px; color:var(--ink-soft); letter-spacing:.02em; padding-top:4px; }
+.logic-list .txt{ font-family:var(--f-cn-body); font-weight:400; font-size:var(--body-fs); line-height:1.5; color:var(--ink); }
+.logic-list li.concl .txt{ font-weight:700; padding-left:14px; border-left:1.5px solid var(--ink); }
+.logic-list li.concl .step{ color:var(--ink); }
+
+/* 右栏：上支撑 + 下行动 */
+.right-col{ display:flex; flex-direction:column; min-height:0; }
+.right-col .block{ display:flex; flex-direction:column; min-height:0; }
+.right-col .block.evidence{ flex:0 1 auto; min-height:0; overflow:hidden; }
+.right-col .block.action{ flex:1 1 auto; padding-top:22px; margin-top:0; min-height:0; overflow:visible; }
+
+/* 支撑依据 —— 正文统一 var(--body-fs) */
+.support-list{ list-style:none; }
+.support-list li{ display:grid; grid-template-columns:12px 1fr; gap:10px; align-items:start; padding:var(--body-gap) 0; border-bottom:none; }
+.support-list .mark{ width:10px; height:10px; background:var(--ink); margin-top:9px; }
+.support-list .txt{ font-family:var(--f-cn-body); font-weight:400; font-size:var(--body-fs); line-height:1.46; color:var(--ink); }
+.support-list li:first-child .txt{ font-weight:600; }
+.support-list li.counter{ display:block; padding:var(--body-gap) 0; }
+.support-list li.counter .mark{ display:none; }
+.support-list li.counter .txt{ display:block; }
+.cb-row{ border-bottom:none; padding:0; }
+.cb-row .plabel{ min-width:52px; }
+/* 反例/边界行的 chip 回到普通文本流，与行动建议同款呈现（避免 flex 交叉轴拉伸） */
+.cb-row .ptexts{ display:block; }
+
+/* 行动建议 —— 正文统一 var(--body-fs)；实心方块=作者观点，空心方块=理论推演 */
+.action-list{ list-style:none; min-height:0; }
+.action-list li{ display:grid; grid-template-columns:12px 1fr; gap:10px; align-items:start; padding:var(--body-gap) 0; border-bottom:none; }
+.action-list .mark{ width:10px; height:10px; background:var(--ink); margin-top:9px; }
+.action-list .mark.theory{ background:transparent; border:1.5px solid var(--ink); }
+.action-list .txt{ font-family:var(--f-cn-body); font-weight:400; font-size:var(--body-fs); line-height:1.46; color:var(--ink); }
+/* chip 全板块统一：与行动建议同款（12px 字号、1px/6px 内边距、2px 垂直偏移） */
+.src-chip{ display:inline-block; font-family:var(--f-mono); font-size:12px; line-height:1.2; letter-spacing:.02em; white-space:nowrap; margin-left:8px; padding:1px 6px; vertical-align:2px; }
+.src-chip.author{ background:var(--ink); color:var(--paper); }
+.src-chip.theory{ background:transparent; color:var(--ink); border:1px dashed var(--ink-soft); }
+/* 页码小字全板块统一：参考行动建议 13px */
+.pg{ font-family:var(--f-mono); font-size:13px; color:var(--ink-soft); margin-left:8px; white-space:nowrap; }
+
+/* 金句条：V12 规则（成对引号行内贴合首尾、33px；右下出处 20px） */
+.quote-row{
+  display:grid; grid-template-columns:1fr auto; align-items:center; gap:50px;
+  border-top:1.5px solid var(--ink); padding-top:10px;
+}
+.quote-row .qs{ display:flex; flex-direction:column; gap:3px; overflow:hidden; }
+.quote-row .q{ font-family:var(--f-cn-display); font-weight:600; font-size:33px; line-height:1.45; color:var(--ink); position:relative; text-align:left; }
+.quote-row .qm{ font-family:var(--f-cn-display); font-weight:700; font-size:40px; color:var(--ink-soft); line-height:0; vertical-align:-2px; }
+.quote-row .qm.open{ margin-right:4px; }
+.quote-row .qm.close{ margin-left:2px; }
+.quote-row .q.q2{ font-size:33px; font-weight:600; color:var(--ink); }
+.quote-row .src{ font-family:var(--f-mono); font-size:20px; letter-spacing:.04em; color:var(--ink); text-align:right; white-space:nowrap; line-height:1.7; }
+
+/* ===========================================
+   COVER — 封面
+   =========================================== */
+.cover .frame{ display:grid; grid-template-rows:auto 1fr auto; }
+.cover-title{
+  font-family:'Noto Sans SC','Hanken Grotesk',sans-serif; font-weight:900;
+  font-size:112px; line-height:1.06; color:var(--ink); letter-spacing:-.02em;
+}
+.cover-title.c1{ font-size:112px; }
+.cover-title.c2{ font-size:88px; }
+.cover-title.c3{ font-size:70px; }
+.cover-title.c4{ font-size:58px; }
+.cover-title .en{
+  display:block; font-family:var(--f-display); font-style:italic; font-weight:300;
+  font-size:44px; color:var(--ink); letter-spacing:.01em; margin-top:20px;
+}
+.cover-title .en i{ font-style:italic; }
+.cover-kicker{
+  font-family:var(--f-mono); font-size:19px; letter-spacing:.2em; color:var(--ink);
+  display:flex; align-items:center; gap:16px; margin-bottom:30px;
+}
+.cover-kicker::after{ content:""; flex:1; height:1px; background:rgba(31,43,224,.4); }
+.cover-lede{
+  margin-top:40px; font-family:var(--f-cn-body); font-weight:400;
+  font-size:29px; line-height:1.8; color:var(--ink); max-width:1000px;
+}
+.cover-lede u{
+  text-decoration:none; border-bottom:2px solid var(--ink); padding-bottom:2px; font-weight:600;
+}
+/* 巨大 42 描边水印：用 SVG 实现描边文字，
+   避免 -webkit-text-stroke 在部分渲染环境下失效 */
+.cover .wm{
+  position:absolute; right:270px; bottom:130px; z-index:1;
+  pointer-events:none; overflow:visible;
+}
+.glitch{ position:absolute; right:0; top:0; z-index:1; }
+.glitch svg{ display:block; }
+.cover .glitch{ top:120px; }
+.cover .qr{ position:absolute; right:0; bottom:210px; z-index:2; }
+
+.index-bar{
+  position:absolute; left:0; right:0; bottom:0;
+  border-top:1.5px solid var(--ink);
+  display:grid; grid-template-columns:1.35fr 1fr 1fr 1fr;
+}
+.index-bar .cell{ padding:20px 26px 0; border-right:1px solid var(--ink-faint); }
+.index-bar .cell:first-child{ padding-left:0; }
+.index-bar .cell:last-child{ border-right:none; }
+.index-bar .k{
+  font-family:var(--f-mono); font-size:13px; letter-spacing:.18em; color:var(--ink-soft);
+  margin-bottom:9px;
+}
+.index-bar .v{
+  font-family:var(--f-cn-display); font-weight:700; font-size:25px; color:var(--ink); line-height:1.4;
+}
+.index-bar .v em{ font-family:var(--f-mono); font-style:normal; font-weight:400; font-size:20px; }
+
+/* ===========================================
+   CONTRAST — 两书对照页
+   =========================================== */
+.contrast .frame{ display:grid; grid-template-rows:auto 1fr auto; }
+.compare{
+  display:grid; grid-template-columns:1fr 1fr; gap:0; align-items:start;
+}
+.compare .side{ padding-right:56px; }
+.compare .side + .side{ padding-left:56px; border-left:1px solid var(--ink-faint); padding-right:0; }
+.compare .booktag{
+  display:inline-block; background:var(--ink); color:var(--paper);
+  font-family:var(--f-mono); font-size:14px; letter-spacing:.1em; padding:5px 12px 4px;
+  margin-bottom:20px;
+}
+.compare h3{
+  font-family:var(--f-cn-display); font-weight:900; font-size:54px; color:var(--ink);
+  line-height:1.14; margin-bottom:10px;
+}
+.compare .full{
+  font-family:var(--f-cn-body); font-weight:400; font-size:19px; color:var(--ink-soft);
+  margin-bottom:22px;
+}
+.compare .claim{
+  font-family:var(--f-cn-display); font-weight:600; font-size:25px; line-height:1.7;
+  color:var(--ink); padding-bottom:22px; margin-bottom:20px;
+  border-bottom:1.5px solid var(--ink);
+}
+.compare ul{ list-style:none; }
+.compare li{
+  display:grid; grid-template-columns:34px 1fr; gap:14px;
+  padding:10px 0; border-bottom:1px solid var(--ink-faint);
+  font-family:var(--f-cn-body); font-size:19px; line-height:1.7; color:var(--ink);
+}
+.compare li b{ font-family:var(--f-mono); font-weight:400; font-size:16px; color:var(--ink-soft); padding-top:5px; }
+.compare .stat{
+  margin-top:26px; display:flex; gap:44px;
+}
+.compare .stat div .n{
+  font-family:var(--f-display); font-size:50px; color:var(--ink); line-height:1;
+}
+.compare .stat div .l{
+  font-family:var(--f-mono); font-size:13px; letter-spacing:.14em; color:var(--ink-soft); margin-top:8px;
+}
+.pair-note{
+  border-top:1.5px solid var(--ink); padding-top:18px;
+  display:grid; grid-template-columns:auto 1fr; gap:34px; align-items:baseline;
+}
+.pair-note .k{
+  font-family:var(--f-mono); font-size:13px; letter-spacing:.16em; color:var(--ink-soft);
+}
+.pair-note .v{
+  font-family:var(--f-cn-display); font-weight:600; font-size:24px; color:var(--ink); line-height:1.6;
+}
+
+/* ===========================================
+   TOC — 目录页（42 行，两栏）
+   设计意图：行高压到 30px，保证 22 行 + 分组头完整落在安全区内。
+   =========================================== */
+.toc .frame{ display:grid; grid-template-rows:auto 1fr; row-gap:24px; }
+.toc-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0; min-height:0; }
+.toc-col{ padding-right:52px; }
+/* 目录 v3 定稿（2026-11-18）：去两列间竖虚线；分组头不再生成（DOM 无 .toc-group） */
+.toc-col + .toc-col{ padding-left:52px; border-left:none; padding-right:0; }
+.toc-group{ display:none; }
+.toc-group .cn{ font-family:var(--f-cn-display); font-weight:700; font-size:26px; color:var(--ink); }
+.toc-group .en{ font-family:var(--f-mono); font-size:13px; letter-spacing:.08em; color:var(--ink-soft); }
+/* 行距加大、序号与正文收紧、固定行高防 hover 抖动；无行间虚线，直接落在方格底纹上 */
+.toc-row{
+  display:grid; grid-template-columns:38px 1fr; gap:8px; align-items:baseline;
+  padding:9px 0; min-height:52px; box-sizing:border-box; border-bottom:none;
+  transition:transform .22s cubic-bezier(.2,.7,.3,1), background .22s ease;
+}
+.toc-row:hover{ transform:translateX(8px); }
+.toc-row .n{ font-family:var(--f-mono); font-size:19px; color:var(--ink-soft); }
+.toc-row:hover .n{ font-size:21px; font-weight:700; color:var(--ink); }
+.toc-row .t{
+  font-family:var(--f-cn-body); font-size:20px; line-height:1.5; color:var(--ink);
+  /* 长标题书（如平均26字以上）标题换行会把行高从47px撑到71px，15行累计溢出目录grid。
+     单行省略：短标题书不受影响，长标题书目录不再撑出舞台；完整标题在观点页展示。 */
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
+}
+.toc-row:hover .t{ font-size:22px; font-weight:700; }
+.toc-row .t em{
+  font-style:normal; font-family:var(--f-mono); font-size:16px; color:var(--ink-soft);
+  margin-left:8px; letter-spacing:.04em;
+}
+.toc-row:hover .t em{ font-size:18px; font-weight:400; }
+
+/* ===========================================
+   CHAPTER — 章节分隔页
+   设计意图：右侧像素故障列收窄到 150px 并留出安全边，
+   主标题区靠左、垂直居中，统计数字压在页面底部。
+   章节序号用 Newsreader 大写数字，与书名的黑体形成对照。
+   =========================================== */
+.chapter .frame{
+  display:grid; grid-template-rows:1fr auto; row-gap:30px;
+  padding-right:170px;   /* 给右侧像素列让位 */
+}
+.chapter .glitch{ width:150px; right:34px; top:0; }
+.chapter-no{
+  font-family:var(--f-display); font-size:200px; line-height:.85; color:var(--ink);
+  letter-spacing:-.015em; margin-bottom:26px;
+}
+.chapter-title{
+  font-family:'Noto Sans SC','Hanken Grotesk',sans-serif; font-weight:900;
+  font-size:92px; line-height:1.08; color:var(--ink); letter-spacing:-.01em;
+}
+.chapter-title .en{
+  display:block; font-family:var(--f-display); font-style:italic; font-weight:300;
+  font-size:36px; margin-top:18px;
+}
+.chapter-meta{
+  display:flex; gap:64px; border-top:1.5px solid var(--ink); padding-top:22px;
+}
+.chapter-meta div .n{ font-family:var(--f-display); font-size:46px; color:var(--ink); line-height:1; }
+.chapter-meta div .l{
+  font-family:var(--f-mono); font-size:13px; letter-spacing:.14em; color:var(--ink-soft); margin-top:9px;
+}
+
+/* ===========================================
+   INSIGHT — 洞察页
+   =========================================== */
+.insight .frame{ display:grid; grid-template-rows:auto 1fr; row-gap:24px; }
+/* 洞察标题放大两档：29px -> 37px；「最反常识的洞察」等标题整体放大 */
+.insight .topbar .tb-title{ font-size:37px; }
+.insight-list{ display:flex; flex-direction:column; justify-content:space-between; }
+.insight-item{
+  display:grid; grid-template-columns:104px 1fr; gap:30px; align-items:start;
+  padding:12px 0; border-bottom:1px solid var(--ink-faint);
+}
+.insight-item:last-child{ border-bottom:none; }
+.insight-item .n{
+  font-family:var(--f-display); font-size:56px; color:var(--ink); line-height:.9;
+}
+/* 洞察观点放大两档：24px -> 32px；下划线仅在本板块出现 */
+.insight-item .t{
+  font-family:var(--f-cn-display); font-weight:600; font-size:32px; line-height:1.55; color:var(--ink);
+}
+.insight-item .t b{ font-weight:700; border-bottom:2px solid var(--ink); }
+
+/* ===========================================
+   COLOPHON — 结语页
+   =========================================== */
+.colophon .frame{ display:grid; grid-template-rows:auto 1fr auto; }
+.colophon-inner{ text-align:right; align-self:center; }
+.colophon-kicker{
+  font-family:var(--f-mono); font-size:17px; letter-spacing:.2em; color:var(--ink);
+  margin-bottom:24px;
+}
+.colophon h2{
+  font-family:var(--f-display); font-size:92px; line-height:1; color:var(--ink);
+  letter-spacing:-.005em; margin-bottom:30px;
+}
+.colophon h2 em{ font-style:italic; }
+.colophon .lede{
+  font-family:var(--f-cn-body); font-size:24px; line-height:1.85; color:var(--ink);
+  max-width:860px; margin-left:auto; text-align:left;
+}
+.colophon .credits{
+  border-top:1.5px solid var(--ink); padding-top:20px;
+  display:grid; grid-template-columns:repeat(4,1fr); gap:30px;
+}
+.colophon .credits div{ text-align:left; }
+.colophon .credits .k{
+  font-family:var(--f-mono); font-size:12px; letter-spacing:.16em; color:var(--ink-soft); margin-bottom:9px;
+}
+.colophon .credits .v{
+  font-family:var(--f-cn-body); font-size:17px; line-height:1.6; color:var(--ink);
+}
+/* 结语页的像素列移到左侧并收窄，credits 首列留出安全边 */
+.colophon .glitch{ left:0; right:auto; width:130px; }
+.colophon .frame{ padding-left:160px; }
+.colophon .credits .v{ font-size:16px; line-height:1.55; }
+
+/* ===========================================
+   MOTION — 分层浮现
+   =========================================== */
+.reveal{ opacity:0; transform:translateY(22px); }
+.slide.visible .reveal{
+  opacity:1; transform:none;
+  transition:opacity .7s var(--ease), transform .7s var(--ease);
+}
+.slide.visible .r1{ transition-delay:.04s }
+.slide.visible .r2{ transition-delay:.12s }
+.slide.visible .r3{ transition-delay:.20s }
+.slide.visible .r4{ transition-delay:.30s }
+.slide.visible .r5{ transition-delay:.40s }
+.slide.visible .r6{ transition-delay:.50s }
+.slide.visible .r7{ transition-delay:.60s }
+.slide.visible .r8{ transition-delay:.70s }
+.slide.visible .r9{ transition-delay:.80s }
+.slide.visible .r10{ transition-delay:.90s }
